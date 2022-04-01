@@ -1,5 +1,6 @@
-#include <micro_ros_arduino.h>
+#include "wifi.h" // add your wifi credentials and ROS agent IP here.
 
+#include <micro_ros_arduino.h>
 #include <stdio.h>
 #include <rcl/rcl.h>
 #include <rcl/error_handling.h>
@@ -51,7 +52,7 @@ void subscription_callback(const void * msgin)
 
 void setup() {
   // set_microros_transports();
-  set_microros_wifi_transports((char*)"SSID", (char*)"WIFIPASSWD", (char*)"192.168.1.73", 8888); // SSID, PASSWD, AGENTIP, PORT. (Defaults to udp4. Good? Bad?)
+  set_microros_wifi_transports(SSID, WIFIPASSWD, AGENTIP, 8888); // defined in the wifi.h
 
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, HIGH);
