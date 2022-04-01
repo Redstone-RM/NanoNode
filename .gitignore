@@ -5,3 +5,5 @@
 .vscode/launch.json
 .vscode/ipch
 src/*.bak
+include/wifi.h
+
