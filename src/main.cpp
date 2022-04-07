@@ -42,16 +42,46 @@ void error_loop(){
 }
 
 
-//twist message callback
+//twist message callback jack
 void subscription_callback(const void *msgin) {
   const geometry_msgs__msg__Twist * msg = (const geometry_msgs__msg__Twist *)msgin;
   // if velocity in x direction is 0 turn off LED, if 1 turn on LED
   digitalWrite(LED_PIN, (msg->linear.x == 0) ? LOW : HIGH);
   delay(500);
   digitalWrite(LED_PIN, HIGH);
+  
 }
 
+/*
+START EXPERINMENT
+*/
+
+float demandx=0;
+float demandz=0;
+
+void cmd_vel_cb( const void *msgin){
+  const geometry_msgs__msg__Twist * msg = (const geometry_msgs__msg__Twist *)msgin;
+    // if velocity in x direction is 0 turn off LED, if 1 turn on LED
+  digitalWrite(LED_PIN, (msg->linear.x == 0) ? LOW : HIGH);
+  delay(500);
+  digitalWrite(LED_PIN, HIGH);
+  demandx = msg->linear.x;
+  demandz = msg->angular.z;
+  Serial.write( "X:" );
+  Serial.write( demandx );
+  Serial.write( "Z:" );
+  Serial.write( demandz ); 
+}
+
+
+/*
+END EXPERINMENT
+*/
+
 void setup() {
+  // Setup UART 
+  Serial.begin(57600);
+
   // set_microros_transports();
   set_microros_wifi_transports(SSID, WIFIPASSWD, AGENTIP, 8888); // SSID WIFIPASSWD AGENTIP. All defined in wifi.h. Transport protocol of this function defaults to UDP4
 
@@ -87,9 +117,8 @@ void setup() {
 
   // create executor
   RCCHECK(rclc_executor_init(&executor, &support.context, 1, &allocator));
-  RCCHECK(rclc_executor_add_subscription(&executor, &subscriber, &msg, &subscription_callback, ON_NEW_DATA));
-
-
+  RCCHECK(rclc_executor_add_subscription(&executor, &subscriber, &msg, &cmd_vel_cb, ON_NEW_DATA));
+ 
 }
 
 void loop() {
