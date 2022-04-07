@@ -41,36 +41,55 @@ void error_loop(){
   }
 }
 
-
-//twist message callback jack
-void subscription_callback(const void *msgin) {
-  const geometry_msgs__msg__Twist * msg = (const geometry_msgs__msg__Twist *)msgin;
-  // if velocity in x direction is 0 turn off LED, if 1 turn on LED
-  digitalWrite(LED_PIN, (msg->linear.x == 0) ? LOW : HIGH);
-  delay(500);
-  digitalWrite(LED_PIN, HIGH);
-  
+/* dtostrf - Emulation for dtostrf function from avr-libc 
+https://github.com/arduino/Arduino/blob/a2e7413d229812ff123cb8864747558b270498f1/hardware/arduino/sam/cores/arduino/avr/dtostrf.c
+*/
+char *dtostrf (double val, signed char width, unsigned char prec, char *sout) {
+  char fmt[20];
+  sprintf(fmt, "%%%d.%df", width, prec);
+  sprintf(sout, fmt, val);
+  return sout;
 }
+
 
 /*
 START EXPERINMENT
 */
 
+// Global Twist Vars 
 float demandx=0;
 float demandz=0;
 
+// callback function for cmd_vel topic
 void cmd_vel_cb( const void *msgin){
+  String output;
+
   const geometry_msgs__msg__Twist * msg = (const geometry_msgs__msg__Twist *)msgin;
     // if velocity in x direction is 0 turn off LED, if 1 turn on LED
-  digitalWrite(LED_PIN, (msg->linear.x == 0) ? LOW : HIGH);
-  delay(500);
-  digitalWrite(LED_PIN, HIGH);
+    // remove this after testing.
+    if((msg->linear.x == 0)){
+      digitalWrite(LED_PIN, (msg->linear.x == 0) ? LOW : HIGH);
+      delay(500);
+      digitalWrite(LED_PIN, HIGH);
+  } 
+
   demandx = msg->linear.x;
   demandz = msg->angular.z;
-  Serial.write( "X:" );
-  Serial.write( demandx );
-  Serial.write( "Z:" );
-  Serial.write( demandz ); 
+ 
+  char linearX[32];
+  char angularZ[32];
+  
+  dtostrf(msg->linear.x, 20, 16, linearX );
+  dtostrf(msg->angular.z, 20, 16, angularZ); 
+  output = "X:" + String(linearX)  + "\nZ:" + String(angularZ); 
+  Serial.println(output); 
+
+   
+   if (true){ // placeholder for future test.
+         // Serial.println(String(linearX) ) ;
+  //       Serial.println(output ) ;
+   }
+
 }
 
 
