@@ -8,13 +8,23 @@
 #include <rclc/executor.h>
 #include <std_msgs/msg/int32.h>
 
-#include <geometry_msgs/msg/twist.h>
+#include <geometry_msgs/msg/twist.h> 
+
+/* SERIAL TRANSFER */
+#include <SerialTransfer.h> // https://github.com/PowerBroker2/SerialTransfer
+SerialTransfer myTransfer;
+struct STRUCT {
+  char z;
+  float y;
+} testStruct;
+char arr[] = "hello";
+
+/* END SERIAL TRANSFER */
 
 
 #if !defined(ESP32) && !defined(TARGET_PORTENTA_H7_M7) && !defined(ARDUINO_NANO_RP2040_CONNECT)
 #error This example is only avaible for Arduino Portenta, Arduino Nano RP2040 Connect and ESP32 Dev module
 #endif
-
 
 
 std_msgs__msg__Int32 msg;
@@ -82,12 +92,9 @@ void cmd_vel_cb( const void *msgin){
   dtostrf(msg->linear.x, 20, 16, linearX );
   dtostrf(msg->angular.z, 20, 16, angularZ); 
   output = "X:" + String(linearX)  + "\nZ:" + String(angularZ); 
-  Serial.println(output); 
-
    
    if (true){ // placeholder for future test.
-         // Serial.println(String(linearX) ) ;
-  //       Serial.println(output ) ;
+      Serial.println(output);           
    }
 
 }
@@ -100,6 +107,12 @@ END EXPERINMENT
 void setup() {
   // Setup UART 
   Serial.begin(57600);
+  
+ /* SerialTransfer.h Test */ 
+  myTransfer.begin(Serial); 
+  testStruct.z = '$'; 
+  testStruct.y = 4.5; 
+/* End Test */
 
   // set_microros_transports();
   set_microros_wifi_transports(SSID, WIFIPASSWD, AGENTIP, 8888); // SSID WIFIPASSWD AGENTIP. All defined in wifi.h. Transport protocol of this function defaults to UDP4
@@ -146,5 +159,17 @@ void loop() {
 
   delay(100);
   RCCHECK(rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100))); // Run Executor.
+
+/* SerialTransfer.h Test */ 
+  // use this variable to keep track of how many
+  // bytes we're stuffing in the transmit buffer
+  uint16_t sendSize = 0;
+  ///////////////////////////////////////// Stuff buffer with struct
+  sendSize = myTransfer.txObj(testStruct, sendSize);
+  ///////////////////////////////////////// Stuff buffer with array
+  sendSize = myTransfer.txObj(arr, sendSize);
+  ///////////////////////////////////////// Send buffer
+  myTransfer.sendData(sendSize);
+/* End SerialTransfer.h Test */ 
 
 }
