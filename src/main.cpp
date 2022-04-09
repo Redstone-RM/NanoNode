@@ -11,13 +11,16 @@
 #include <geometry_msgs/msg/twist.h> 
 
 /* SERIAL TRANSFER */
+
+#define mySerialConn Serial // Define the UART to use
+
 #include <SerialTransfer.h> // https://github.com/PowerBroker2/SerialTransfer
-SerialTransfer myTransfer;
-struct STRUCT {
-  char z;
-  float y;
-} testStruct;
-char arr[] = "hello";
+SerialTransfer txSerailTransfer;
+struct ctrlmsg {
+  float x;
+  float z;
+  char  debug[128];
+} ctrlmsg;
 
 /* END SERIAL TRANSFER */
 
@@ -72,7 +75,7 @@ float demandz=0;
 
 // callback function for cmd_vel topic
 void cmd_vel_cb( const void *msgin){
-  String output;
+  //String output;
 
   const geometry_msgs__msg__Twist * msg = (const geometry_msgs__msg__Twist *)msgin;
     // if velocity in x direction is 0 turn off LED, if 1 turn on LED
@@ -82,19 +85,27 @@ void cmd_vel_cb( const void *msgin){
       delay(500);
       digitalWrite(LED_PIN, HIGH);
   } 
+  ctrlmsg.z = msg->angular.z; // update botmsg
+  ctrlmsg.x = msg->linear.x;
 
   demandx = msg->linear.x;
   demandz = msg->angular.z;
- 
+  
   char linearX[32];
   char angularZ[32];
   
   dtostrf(msg->linear.x, 20, 16, linearX );
   dtostrf(msg->angular.z, 20, 16, angularZ); 
-  output = "X:" + String(linearX)  + "\nZ:" + String(angularZ); 
-   
+  // output = "X:" + String(linearX)  + "\nZ:" + String(angularZ); 
+
+    char SerialOut[] = "X:";
+    strcat(SerialOut, linearX );
+    strcat(SerialOut, "Z:" );
+    strcat(SerialOut, angularZ);
+
    if (true){ // placeholder for future test.
-      Serial.println(output);           
+      // Serial.println(output);           
+      strcpy(ctrlmsg.debug, SerialOut );
    }
 
 }
@@ -106,12 +117,13 @@ END EXPERINMENT
 
 void setup() {
   // Setup UART 
-  Serial.begin(57600);
+  mySerialConn.begin(57600);
   
  /* SerialTransfer.h Test */ 
-  myTransfer.begin(Serial); 
-  testStruct.z = '$'; 
-  testStruct.y = 4.5; 
+  txSerailTransfer.begin(mySerialConn); 
+  ctrlmsg.z = '0'; 
+  ctrlmsg.x = '0'; 
+ 
 /* End Test */
 
   // set_microros_transports();
@@ -161,15 +173,8 @@ void loop() {
   RCCHECK(rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100))); // Run Executor.
 
 /* SerialTransfer.h Test */ 
-  // use this variable to keep track of how many
-  // bytes we're stuffing in the transmit buffer
-  uint16_t sendSize = 0;
-  ///////////////////////////////////////// Stuff buffer with struct
-  sendSize = myTransfer.txObj(testStruct, sendSize);
-  ///////////////////////////////////////// Stuff buffer with array
-  sendSize = myTransfer.txObj(arr, sendSize);
-  ///////////////////////////////////////// Send buffer
-  myTransfer.sendData(sendSize);
+txSerailTransfer.sendDatum(ctrlmsg);
+ 
 /* End SerialTransfer.h Test */ 
 
 }
