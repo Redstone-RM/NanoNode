@@ -12,7 +12,7 @@
 // SERIAL TRANSFER 
 #define mySerialConn Serial1  // Define the UART to use
 #include <SerialTransfer.h> // https://github.com/PowerBroker2/SerialTransfer
-SerialTransfer txSerialTransfer;
+// SerialTransfer txSerialTransfer;
 
 struct ctrlmsg {
   float x;
@@ -49,9 +49,11 @@ rcl_allocator_t allocator;      //Allocator
 rclc_executor_t executor;       // Executor
 rcl_node_t node;                // Node 
 
-#define LED_PIN 13
+
 #define RCCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){error_loop();}}
 #define RCSOFTCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){}}
+
+#define LED_PIN 13
 
 void error_loop(){
   while(1){
@@ -102,11 +104,11 @@ void cmd_vel_cb( const void *msgin){
       strcat(SerialOut, "Z:" );
       strcat(SerialOut, angularZ);
       strcpy(SerialOut, statmsg.debug );// temp. remove me.
-           
-      Serial.println(SerialOut);          
+         
+      //Serial.println(SerialOut);          
    }
 
-   txSerialTransfer.sendDatum(ctrlmsg);
+   // txSerialTransfer.sendDatum(ctrlmsg);
 }
 
 
@@ -116,10 +118,10 @@ END EXPERINMENT
 
 void setup() {
   // Setup UART 
-  mySerialConn.begin(57600);
+  // mySerialConn.begin(57600);
   
  /* SerialTransfer.h Test */ 
-  txSerialTransfer.begin(mySerialConn); 
+  //txSerialTransfer.begin(mySerialConn); 
   ctrlmsg.z = '0'; 
   ctrlmsg.x = '0'; 
  
@@ -167,11 +169,13 @@ void setup() {
 void loop() {
   /* SerialTransfer.h Test */ 
   //txSerialTransfer.sendDatum(ctrlmsg); // send ctrl message. Currently only done on new twist msg.
-  if (txSerialTransfer.available()){ // if we have an incoming packet
-    txSerialTransfer.rxObj(statmsg); // put it into statmsg
-  } /* End SerialTransfer.h Test */ 
+ // if (txSerialTransfer.available()){ // if we have an incoming packet
+ //   txSerialTransfer.rxObj(statmsg); // put it into statmsg 
+ // } /* End SerialTransfer.h Test */ 
 
-  msg.data++; // Useless Example. increment the msg.data 
+  // ++; // Useless Example. increment the msg.data 
+  msg.data++;
+
   RCSOFTCHECK(rcl_publish(&publisher, &msg, NULL)); // publish data.
   delay(100);
   RCCHECK(rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100))); // Run Executor.

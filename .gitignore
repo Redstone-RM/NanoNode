@@ -7,3 +7,4 @@
 src/*.bak
 include/wifi.h
 
+NanoNode.code-workspace
