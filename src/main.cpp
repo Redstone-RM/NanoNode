@@ -7,15 +7,13 @@
 #include <rclc/rclc.h>
 #include <rclc/executor.h>
 #include <std_msgs/msg/int32.h>
-
 #include <geometry_msgs/msg/twist.h> 
 
-/* SERIAL TRANSFER */
-
-#define mySerialConn Serial // Define the UART to use
-
+// SERIAL TRANSFER 
+#define mySerialConn Serial1  // Define the UART to use
 #include <SerialTransfer.h> // https://github.com/PowerBroker2/SerialTransfer
-SerialTransfer txSerailTransfer;
+SerialTransfer txSerialTransfer;
+
 struct ctrlmsg {
   float x;
   float z;
@@ -78,36 +76,32 @@ void cmd_vel_cb( const void *msgin){
   //String output;
 
   const geometry_msgs__msg__Twist * msg = (const geometry_msgs__msg__Twist *)msgin;
-    // if velocity in x direction is 0 turn off LED, if 1 turn on LED
+    // TESTING ONLY: if velocity in x direction is 0 turn off LED, if 1 turn on LED
     // remove this after testing.
     if((msg->linear.x == 0)){
       digitalWrite(LED_PIN, (msg->linear.x == 0) ? LOW : HIGH);
       delay(500);
       digitalWrite(LED_PIN, HIGH);
   } 
-  ctrlmsg.z = msg->angular.z; // update botmsg
+  ctrlmsg.z = msg->angular.z; // update ctrl msg
   ctrlmsg.x = msg->linear.x;
 
   demandx = msg->linear.x;
   demandz = msg->angular.z;
-  
-  char linearX[32];
-  char angularZ[32];
-  
-  dtostrf(msg->linear.x, 20, 16, linearX );
-  dtostrf(msg->angular.z, 20, 16, angularZ); 
-  // output = "X:" + String(linearX)  + "\nZ:" + String(angularZ); 
-
-    char SerialOut[] = "X:";
-    strcat(SerialOut, linearX );
-    strcat(SerialOut, "Z:" );
-    strcat(SerialOut, angularZ);
-
-   if (true){ // placeholder for future test.
-      // Serial.println(output);           
-      strcpy(ctrlmsg.debug, SerialOut );
+  if (true){ // placeholder for future test.
+      char linearX[32];
+      char angularZ[32];
+      dtostrf(msg->linear.x, 20, 16, linearX );
+      dtostrf(msg->angular.z, 20, 16, angularZ); 
+      char SerialOut[] = "X:";
+      strcat(SerialOut, linearX );
+      strcat(SerialOut, "Z:" );
+      strcat(SerialOut, angularZ);
+      strcpy(ctrlmsg.debug, SerialOut );     
+      Serial.println(SerialOut);          
    }
 
+   txSerialTransfer.sendDatum(ctrlmsg);
 }
 
 
@@ -120,7 +114,7 @@ void setup() {
   mySerialConn.begin(57600);
   
  /* SerialTransfer.h Test */ 
-  txSerailTransfer.begin(mySerialConn); 
+  txSerialTransfer.begin(mySerialConn); 
   ctrlmsg.z = '0'; 
   ctrlmsg.x = '0'; 
  
@@ -173,7 +167,7 @@ void loop() {
   RCCHECK(rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100))); // Run Executor.
 
 /* SerialTransfer.h Test */ 
-txSerailTransfer.sendDatum(ctrlmsg);
+//txSerialTransfer.sendDatum(ctrlmsg);
  
 /* End SerialTransfer.h Test */ 
 
