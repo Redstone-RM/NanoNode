@@ -20,13 +20,25 @@ struct ctrlmsg {
   char  debug[128];
 } ctrlmsg;
 
-/* END SERIAL TRANSFER */
+struct statmsg { // A status msg from the UART connected board.
+  float x; // Confirm current requested X value. Feedback 
+  float z; // Confirm current requested Z value. Feedback 
+  int   mtr_pos_right; // right motor encoder position
+  int   mtr_pos_left; // left motor encoder position
+  int   mtr_speed_right;  // motor a speed
+  int   mtr_speed_left;  // motor b speed
+  int   sen_sonar_fwd; // forward sonar value
+  int   sen_sonar_rear; // rear sonar value
+  int   sen_ir_right; // right IR value
+  int   sen_ir_left; // left IR value
+  char  debug[128]; // short logging message
+} statmsg; // create a status message struct
 
+/* END SERIAL TRANSFER */
 
 #if !defined(ESP32) && !defined(TARGET_PORTENTA_H7_M7) && !defined(ARDUINO_NANO_RP2040_CONNECT)
 #error This example is only avaible for Arduino Portenta, Arduino Nano RP2040 Connect and ESP32 Dev module
 #endif
-
 
 std_msgs__msg__Int32 msg;
 rcl_subscription_t subscriber;  // Subscriber  
@@ -37,13 +49,9 @@ rcl_allocator_t allocator;      //Allocator
 rclc_executor_t executor;       // Executor
 rcl_node_t node;                // Node 
 
-
-
 #define LED_PIN 13
-
 #define RCCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){error_loop();}}
 #define RCSOFTCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){}}
-
 
 void error_loop(){
   while(1){
@@ -68,8 +76,6 @@ START EXPERINMENT
 */
 
 // Global Twist Vars 
-float demandx=0;
-float demandz=0;
 
 // callback function for cmd_vel topic
 void cmd_vel_cb( const void *msgin){
@@ -86,18 +92,17 @@ void cmd_vel_cb( const void *msgin){
   ctrlmsg.z = msg->angular.z; // update ctrl msg
   ctrlmsg.x = msg->linear.x;
 
-  demandx = msg->linear.x;
-  demandz = msg->angular.z;
   if (true){ // placeholder for future test.
       char linearX[32];
-      char angularZ[32];
+      char angularZ[32];     
       dtostrf(msg->linear.x, 20, 16, linearX );
       dtostrf(msg->angular.z, 20, 16, angularZ); 
       char SerialOut[] = "X:";
       strcat(SerialOut, linearX );
       strcat(SerialOut, "Z:" );
       strcat(SerialOut, angularZ);
-      strcpy(ctrlmsg.debug, SerialOut );     
+      strcpy(SerialOut, statmsg.debug );// temp. remove me.
+           
       Serial.println(SerialOut);          
    }
 
@@ -160,15 +165,15 @@ void setup() {
 }
 
 void loop() {
- msg.data++; // Useless Example. increment the msg.data 
- RCSOFTCHECK(rcl_publish(&publisher, &msg, NULL)); // publish data.
+  /* SerialTransfer.h Test */ 
+  //txSerialTransfer.sendDatum(ctrlmsg); // send ctrl message. Currently only done on new twist msg.
+  if (txSerialTransfer.available()){ // if we have an incoming packet
+    txSerialTransfer.rxObj(statmsg); // put it into statmsg
+  } /* End SerialTransfer.h Test */ 
 
+  msg.data++; // Useless Example. increment the msg.data 
+  RCSOFTCHECK(rcl_publish(&publisher, &msg, NULL)); // publish data.
   delay(100);
   RCCHECK(rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100))); // Run Executor.
-
-/* SerialTransfer.h Test */ 
-//txSerialTransfer.sendDatum(ctrlmsg);
- 
-/* End SerialTransfer.h Test */ 
 
 }
