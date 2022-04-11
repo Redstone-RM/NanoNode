@@ -9,10 +9,9 @@
 #include <std_msgs/msg/int32.h>
 #include <geometry_msgs/msg/twist.h> 
 
-// SERIAL TRANSFER 
-#define mySerialConn Serial1  // Define the UART to use
-#include <SerialTransfer.h> // https://github.com/PowerBroker2/SerialTransfer
-// SerialTransfer txSerialTransfer;
+// EGIN I2C Datum TRANSFER  https://github.com/PowerBroker2/SerialTransfer   Send a defined datum object over serial connections. I2C, UART
+#include<I2CTransfer.h> 
+I2CTransfer myTransfer;
 
 struct ctrlmsg {
   float x;
@@ -93,6 +92,7 @@ void cmd_vel_cb( const void *msgin){
   } 
   ctrlmsg.z = msg->angular.z; // update ctrl msg
   ctrlmsg.x = msg->linear.x;
+  
 
   if (true){ // placeholder for future test.
       char linearX[32];
@@ -104,11 +104,13 @@ void cmd_vel_cb( const void *msgin){
       strcat(SerialOut, "Z:" );
       strcat(SerialOut, angularZ);
       strcpy(SerialOut, statmsg.debug );// temp. remove me.
-         
-      //Serial.println(SerialOut);          
+      strcat(ctrlmsg.debug, SerialOut) ;   
+      Serial.println(SerialOut);          
    }
+   
+   myTransfer.sendDatum(ctrlmsg);
 
-   // txSerialTransfer.sendDatum(ctrlmsg);
+
 }
 
 
@@ -118,10 +120,10 @@ END EXPERINMENT
 
 void setup() {
   // Setup UART 
-  // mySerialConn.begin(57600);
-  
- /* SerialTransfer.h Test */ 
-  //txSerialTransfer.begin(mySerialConn); 
+  Serial.begin(57600);
+  Wire.begin();
+  myTransfer.begin(Wire);
+
   ctrlmsg.z = '0'; 
   ctrlmsg.x = '0'; 
  
@@ -167,12 +169,7 @@ void setup() {
 }
 
 void loop() {
-  /* SerialTransfer.h Test */ 
-  //txSerialTransfer.sendDatum(ctrlmsg); // send ctrl message. Currently only done on new twist msg.
- // if (txSerialTransfer.available()){ // if we have an incoming packet
- //   txSerialTransfer.rxObj(statmsg); // put it into statmsg 
- // } /* End SerialTransfer.h Test */ 
-
+  
   // ++; // Useless Example. increment the msg.data 
   msg.data++;
 
