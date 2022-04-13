@@ -10,13 +10,13 @@
 #include <geometry_msgs/msg/twist.h> 
 
 // EGIN I2C Datum TRANSFER  https://github.com/PowerBroker2/SerialTransfer   Send a defined datum object over serial connections. I2C, UART
-// #include<I2CTransfer.h> 
-// I2CTransfer myTransfer;
+#include<I2CTransfer.h> 
+I2CTransfer myTransfer;
 
 struct ctrlmsg {
   float x;
   float z;
-  char  debug[128];
+ // char  debug[128];
 } ctrlmsg;
 
 struct statmsg { // A status msg from the UART connected board.
@@ -76,7 +76,7 @@ char *dtostrf (double val, signed char width, unsigned char prec, char *sout) {
 START EXPERINMENT
 */
 
-// Global Twist Vars 
+// Update Global Twist Vars 
 
 // callback function for cmd_vel topic
 void cmd_vel_cb( const void *msgin){
@@ -92,9 +92,9 @@ void cmd_vel_cb( const void *msgin){
   } 
   ctrlmsg.z = msg->angular.z; // update ctrl msg
   ctrlmsg.x = msg->linear.x;
-  
+  myTransfer.sendDatum(ctrlmsg);
 
-  if (true){ // placeholder for future test.
+  if (true){ // placeholder for future test for serial monitor.
       char linearX[32];
       char angularZ[32];     
       dtostrf(msg->linear.x, 20, 16, linearX );
@@ -103,12 +103,12 @@ void cmd_vel_cb( const void *msgin){
       strcat(SerialOut, linearX );
       strcat(SerialOut, "Z:" );
       strcat(SerialOut, angularZ);
-      strcpy(SerialOut, statmsg.debug );// temp. remove me.
-      strcat(ctrlmsg.debug, SerialOut) ;   
+     // strcpy(SerialOut, statmsg.debug );// temp. remove me.
+     // strcat(ctrlmsg.debug, SerialOut) ;   
       Serial.println(SerialOut);          
    }
    
-   //myTransfer.sendDatum(ctrlmsg);
+   
 
 
 }
@@ -121,8 +121,8 @@ END EXPERINMENT
 void setup() {
   // Setup UART 
   Serial.begin(57600);
-  //Wire.begin();
-  //myTransfer.begin(Wire);
+  Wire.begin();
+  myTransfer.begin(Wire);
 
   ctrlmsg.z = 0; 
   ctrlmsg.x = 0; 
