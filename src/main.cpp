@@ -10,8 +10,8 @@
 #include <geometry_msgs/msg/twist.h> 
 
 // EGIN I2C Datum TRANSFER  https://github.com/PowerBroker2/SerialTransfer   Send a defined datum object over serial connections. I2C, UART
-#include<I2CTransfer.h> 
-I2CTransfer myTransfer;
+// #include<I2CTransfer.h> 
+// I2CTransfer myTransfer;
 
 struct ctrlmsg {
   float x;
@@ -108,7 +108,7 @@ void cmd_vel_cb( const void *msgin){
       Serial.println(SerialOut);          
    }
    
-   myTransfer.sendDatum(ctrlmsg);
+   //myTransfer.sendDatum(ctrlmsg);
 
 
 }
@@ -121,11 +121,11 @@ END EXPERINMENT
 void setup() {
   // Setup UART 
   Serial.begin(57600);
-  Wire.begin();
-  myTransfer.begin(Wire);
+  //Wire.begin();
+  //myTransfer.begin(Wire);
 
-  ctrlmsg.z = '0'; 
-  ctrlmsg.x = '0'; 
+  ctrlmsg.z = 0; 
+  ctrlmsg.x = 0; 
  
 /* End Test */
 
