@@ -16,7 +16,7 @@ I2CTransfer myTransfer;
 struct ctrlmsg {
   float x;
   float z;
-  char  debug[3];
+  char  debug[8];
 } ctrlmsg;
 
 struct statmsg { // A status msg from the UART connected board.
@@ -76,14 +76,15 @@ void cmd_vel_cb( const void *msgin){
   const geometry_msgs__msg__Twist * msg = (const geometry_msgs__msg__Twist *)msgin;
     // TESTING ONLY: if velocity in x direction is 0 turn off LED, if 1 turn on LED
     // remove this after testing.
-    if((msg->linear.x == 0)){
+    if((msg->linear.x == 0) and (msg->angular.z == 0) ){
       digitalWrite(LED_PIN, (msg->linear.x == 0) ? LOW : HIGH);
       delay(500);
       digitalWrite(LED_PIN, HIGH);
+      strcpy(ctrlmsg.debug,"STOP");
   } 
   ctrlmsg.z = msg->angular.z; // update ctrl msg
   ctrlmsg.x = msg->linear.x;
-  strcpy(ctrlmsg.debug,"y");
+  // 
   myTransfer.sendDatum(ctrlmsg);
 
   if (true){ // placeholder for future test for serial monitor.
@@ -111,7 +112,8 @@ void setup() {
 
   ctrlmsg.z = 0; 
   ctrlmsg.x = 0; 
-  strcpy(ctrlmsg.debug ,"x");
+  strcpy(ctrlmsg.debug ,"");
+  myTransfer.sendDatum(ctrlmsg); // init ctrlmsg
  
 /* End Test */
 
@@ -155,10 +157,10 @@ void setup() {
 }
 
 void loop() {
-  
+  strcpy(ctrlmsg.debug ,"");
   // ++; // Useless Example. increment the msg.data 
   msg.data++;
-
+  //strcpy(ctrlmsg.debug ,"x");
   RCSOFTCHECK(rcl_publish(&publisher, &msg, NULL)); // publish data.
   delay(100);
   RCCHECK(rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100))); // Run Executor.
