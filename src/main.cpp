@@ -19,7 +19,7 @@ struct ctrlmsg {
   char  debug[8];
 } ctrlmsg;
 
-struct statmsg { // A status msg from the UART connected board.
+struct statmsg { // A status msg passed back and forthe from an I2C connected board.
   float x; // Confirm current requested X value. Feedback 
   float z; // Confirm current requested Z value. Feedback 
   int   mtr_pos_right; // right motor encoder position
@@ -30,7 +30,7 @@ struct statmsg { // A status msg from the UART connected board.
   int   sen_sonar_rear; // rear sonar value
   int   sen_ir_right; // right IR value
   int   sen_ir_left; // left IR value
-  char  debug[1]; // short logging message
+  char  debug[8]; // short logging message
 } statmsg; // create a status message struct
 
 /* END SERIAL TRANSFER */
@@ -113,7 +113,9 @@ void setup() {
   ctrlmsg.z = 0; 
   ctrlmsg.x = 0; 
   strcpy(ctrlmsg.debug ,"");
-  myTransfer.sendDatum(ctrlmsg); // init ctrlmsg
+  // myTransfer.sendDatum(ctrlmsg); // init ctrlmsg
+ 
+  myTransfer.sendDatum(ctrlmsg,0,0);  // see if address works.
  
 /* End Test */
 
