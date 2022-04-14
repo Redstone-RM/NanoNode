@@ -10,16 +10,16 @@
 #include <geometry_msgs/msg/twist.h> 
 
 // EGIN I2C Datum TRANSFER  https://github.com/PowerBroker2/SerialTransfer   Send a defined datum object over serial connections. I2C, UART
-// #include<I2CTransfer.h> 
-// I2CTransfer myTransfer;
+#include<I2CTransfer.h> 
+I2CTransfer myTransfer;
 
 struct ctrlmsg {
   float x;
   float z;
-  char  debug[128];
+  char  debug[8];
 } ctrlmsg;
 
-struct statmsg { // A status msg from the UART connected board.
+struct statmsg { // A status msg passed back and forthe from an I2C connected board.
   float x; // Confirm current requested X value. Feedback 
   float z; // Confirm current requested Z value. Feedback 
   int   mtr_pos_right; // right motor encoder position
@@ -30,7 +30,7 @@ struct statmsg { // A status msg from the UART connected board.
   int   sen_sonar_rear; // rear sonar value
   int   sen_ir_right; // right IR value
   int   sen_ir_left; // left IR value
-  char  debug[128]; // short logging message
+  char  debug[8]; // short logging message
 } statmsg; // create a status message struct
 
 /* END SERIAL TRANSFER */
@@ -61,54 +61,40 @@ void error_loop(){
   }
 }
 
-/* dtostrf - Emulation for dtostrf function from avr-libc 
-https://github.com/arduino/Arduino/blob/a2e7413d229812ff123cb8864747558b270498f1/hardware/arduino/sam/cores/arduino/avr/dtostrf.c
-*/
-char *dtostrf (double val, signed char width, unsigned char prec, char *sout) {
-  char fmt[20];
-  sprintf(fmt, "%%%d.%df", width, prec);
-  sprintf(sout, fmt, val);
-  return sout;
-}
-
 
 /*
 START EXPERINMENT
 */
 
-// Global Twist Vars 
+// Update Global Twist Vars 
 
 // callback function for cmd_vel topic
 void cmd_vel_cb( const void *msgin){
   //String output;
+  String serial_out_msg; 
 
   const geometry_msgs__msg__Twist * msg = (const geometry_msgs__msg__Twist *)msgin;
     // TESTING ONLY: if velocity in x direction is 0 turn off LED, if 1 turn on LED
     // remove this after testing.
-    if((msg->linear.x == 0)){
+    if((msg->linear.x == 0) and (msg->angular.z == 0) ){
       digitalWrite(LED_PIN, (msg->linear.x == 0) ? LOW : HIGH);
       delay(500);
       digitalWrite(LED_PIN, HIGH);
+      strcpy(ctrlmsg.debug,"STOP");
   } 
   ctrlmsg.z = msg->angular.z; // update ctrl msg
   ctrlmsg.x = msg->linear.x;
-  
+  // 
+  myTransfer.sendDatum(ctrlmsg);
 
-  if (true){ // placeholder for future test.
-      char linearX[32];
-      char angularZ[32];     
-      dtostrf(msg->linear.x, 20, 16, linearX );
-      dtostrf(msg->angular.z, 20, 16, angularZ); 
-      char SerialOut[] = "X:";
-      strcat(SerialOut, linearX );
-      strcat(SerialOut, "Z:" );
-      strcat(SerialOut, angularZ);
-      strcpy(SerialOut, statmsg.debug );// temp. remove me.
-      strcat(ctrlmsg.debug, SerialOut) ;   
-      Serial.println(SerialOut);          
+  if (true){ // placeholder for future test for serial monitor.
+    serial_out_msg = "";
+    serial_out_msg +=  "CTRL X:"+ String(ctrlmsg.x) + " Z: " + String(ctrlmsg.z) + " DeBug: " + String(ctrlmsg.debug) +"\n";
+    Serial.println(serial_out_msg);
+
    }
    
-   //myTransfer.sendDatum(ctrlmsg);
+   
 
 
 }
@@ -121,11 +107,15 @@ END EXPERINMENT
 void setup() {
   // Setup UART 
   Serial.begin(57600);
-  //Wire.begin();
-  //myTransfer.begin(Wire);
+  Wire.begin();
+  myTransfer.begin(Wire);
 
   ctrlmsg.z = 0; 
   ctrlmsg.x = 0; 
+  strcpy(ctrlmsg.debug ,"");
+  // myTransfer.sendDatum(ctrlmsg); // init ctrlmsg
+ 
+  myTransfer.sendDatum(ctrlmsg,0,0);  // see if address works.
  
 /* End Test */
 
@@ -169,10 +159,10 @@ void setup() {
 }
 
 void loop() {
-  
+  strcpy(ctrlmsg.debug ,"");
   // ++; // Useless Example. increment the msg.data 
   msg.data++;
-
+  //strcpy(ctrlmsg.debug ,"x");
   RCSOFTCHECK(rcl_publish(&publisher, &msg, NULL)); // publish data.
   delay(100);
   RCCHECK(rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100))); // Run Executor.
