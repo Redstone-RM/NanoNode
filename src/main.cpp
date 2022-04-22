@@ -1,4 +1,5 @@
 #include "wifi.h" // add your wifi credentials and ROS agent IP here.
+#include "botmsg.h" // interboard communication 
 
 #include <micro_ros_arduino.h>
 #include <stdio.h>
@@ -9,36 +10,14 @@
 #include <std_msgs/msg/int32.h>
 #include <geometry_msgs/msg/twist.h> 
 
-// EGIN I2C Datum TRANSFER  https://github.com/PowerBroker2/SerialTransfer   Send a defined datum object over serial connections. I2C, UART
-#include<I2CTransfer.h> 
+#include<I2CTransfer.h> //SerialTransfer.h  I2C Transfer  https://github.com/PowerBroker2/SerialTransfer   Send a defined struct "datum" object over serial conn.
 I2CTransfer myTransfer;
-
-struct ctrlmsg {
-  float x;
-  float z;
-  char  debug[8];
-} ctrlmsg;
-
-struct statmsg { // A status msg passed back and forthe from an I2C connected board.
-  float x; // Confirm current requested X value. Feedback 
-  float z; // Confirm current requested Z value. Feedback 
-  int   mtr_pos_right; // right motor encoder position
-  int   mtr_pos_left; // left motor encoder position
-  int   mtr_speed_right;  // motor a speed
-  int   mtr_speed_left;  // motor b speed
-  int   sen_sonar_fwd; // forward sonar value
-  int   sen_sonar_rear; // rear sonar value
-  int   sen_ir_right; // right IR value
-  int   sen_ir_left; // left IR value
-  char  debug[8]; // short logging message
-} statmsg; // create a status message struct
-
-/* END SERIAL TRANSFER */
 
 #if !defined(ESP32) && !defined(TARGET_PORTENTA_H7_M7) && !defined(ARDUINO_NANO_RP2040_CONNECT)
 #error This example is only avaible for Arduino Portenta, Arduino Nano RP2040 Connect and ESP32 Dev module
 #endif
 
+// Setup micro-ROS
 std_msgs__msg__Int32 msg;
 rcl_subscription_t subscriber;  // Subscriber  
 geometry_msgs__msg__Twist twistmsg;  // Twist Msg 
@@ -54,7 +33,7 @@ rcl_node_t node;                // Node
 
 #define LED_PIN 13
 
-void error_loop(){
+void error_loop(){ // TBD add reconnect.
   while(1){
     digitalWrite(LED_PIN, !digitalRead(LED_PIN));
     delay(100);
@@ -93,12 +72,8 @@ void cmd_vel_cb( const void *msgin){
     Serial.println(serial_out_msg);
 
    }
-   
-   
-
-
+ 
 }
-
 
 /*
 END EXPERINMENT
@@ -158,10 +133,10 @@ void setup() {
  
 }
 
-void loop() {
+void loop() 
+{
   strcpy(ctrlmsg.debug ,"");
-  // ++; // Useless Example. increment the msg.data 
-  msg.data++;
+  msg.data++; // Useless Example. increment the msg.data 
   //strcpy(ctrlmsg.debug ,"x");
   RCSOFTCHECK(rcl_publish(&publisher, &msg, NULL)); // publish data.
   delay(100);
