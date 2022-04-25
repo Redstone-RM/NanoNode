@@ -39,6 +39,23 @@ union multi_sensor_data
 };
 union multi_sensor_data multiSensorData;
 
+struct moveItem {
+    float x;                    // 4 bytes
+    float z;                    // 4
+    int testval;                // 2
+    char debug[1];              // 1    
+                                //====
+                                // 11 Bytes
+};
+
+// Union joins 11 Byte struct above to a uint8_t of 11 Bytes
+union inputFromPC {
+   moveItem moveData;
+   uint8_t bytes[11];
+};
+ // this creates a working instance of the Union
+ // elements in it are referred to as, e.g. inputData.moveData.x
+inputFromPC inputData;
 
 bool explorePeripheral( BLEDevice peripheral )
 {
@@ -93,12 +110,22 @@ bool explorePeripheral( BLEDevice peripheral )
        
         multiSensorDataCharacteristic.readValue( multiSensorData.bytes, sizeof multiSensorData.bytes );
         
-          Serial.println( multiSensorData.msg );
+          Serial.println( multiSensorData.msg ); 
+      }
+      if(multiSensorDataCharacteristic.canWrite() ){
+        Serial.println( "BLE Characteristic is writable" );  
+        // Send 11 Byte "bytes" which is  union of the 11 byte struct moveItem moveData
+        inputData.moveData.x = 2.34;
+        inputData.moveData.z = 1.00;
+        inputData.moveData.testval =1234;
+        strcpy (inputData.moveData.debug, "A" );
+        multiSensorDataCharacteristic.writeValue( inputData.bytes, sizeof inputData.bytes );
+        delay(100);
+       // TRY THIS? ^^^  
        
 
-        
-        
       }
+
     }
   }
 
