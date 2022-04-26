@@ -10,24 +10,11 @@
 #include <ArduinoBLE.h>
 
 //----------------------------------------------------------------------------------------------------------------------
-// BLE UUIDs
+// HM10 BLE UUIDs
 //----------------------------------------------------------------------------------------------------------------------
-
-// #define BLE_UUID_SENSOR_DATA_SERVICE              "2BEEF31A-B10D-271C-C9EA-35D865C1F48A"
-// #define BLE_UUID_MULTI_SENSOR_DATA                "4664E7A1-5A13-BFFF-4636-7D0A4B16496C"
-
 #define BLE_UUID_SENSOR_DATA_SERVICE              "ffe0"
 #define BLE_UUID_MULTI_SENSOR_DATA                "ffe1"
-
-#define NUMBER_OF_SENSORS 4
 #define BLE_POLL_INTERVALL 5
-
-/*
-
-
-union multi_sensor_data multiSensorData;
-*/
-
 
 union multi_sensor_data
 {
@@ -39,11 +26,10 @@ union multi_sensor_data
 };
 union multi_sensor_data multiSensorData;
 
-struct moveItem {
-    float x;                    // 4 bytes
-    float z;                    // 4
-    int testval;                // 2
-    char debug[1];              // 1    
+struct  moveItem {
+    float x;                    // 4 bytes Twist X
+    float z;                    // 4       Twist Z 
+    char cmd[3];                // 3       2 Chararter command variable
                                 //====
                                 // 11 Bytes
 };
@@ -115,13 +101,12 @@ bool explorePeripheral( BLEDevice peripheral )
       if(multiSensorDataCharacteristic.canWrite() ){
         Serial.println( "BLE Characteristic is writable" );  
         // Send 11 Byte "bytes" which is  union of the 11 byte struct moveItem moveData
-        inputData.moveData.x = 2.34;
-        inputData.moveData.z = 1.00;
-        inputData.moveData.testval =1234;
-        strcpy (inputData.moveData.debug, "A" );
+        inputData.moveData.x = 2.34; // This is where you would update the X value with current twist msg
+        inputData.moveData.z = 1.00; // This is where you would update the Z value with current twist msg
+        strcpy (inputData.moveData.cmd, "AB" ); // 2 Char command
         multiSensorDataCharacteristic.writeValue( inputData.bytes, sizeof inputData.bytes );
         delay(100);
-       // TRY THIS? ^^^  
+       // ~~TRY~~ THIS. WooOORKS! ^^^  
        
 
       }
