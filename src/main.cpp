@@ -79,7 +79,8 @@ union inputFromPC {
 inputFromPC inputData;
 
 // byte data received
-const byte numBytes = 32;
+//const byte numBytes = 32;
+const byte numBytes = BLE_SENSOR_DATA_BYTES;
 byte receivedBytes[numBytes];
 byte numReceived = 0;
 
@@ -95,29 +96,36 @@ void recvBytesWithStartEndMarkers() {
     byte rb;
    
 
-    while ( newData == false ) {
-        rb = Serial.read();
+    while ( newData == false ) 
+    {
+      for (byte n = 0; n < sizeof(multiSensorData.bytes);  n++)
+      {
+        // rb = Serial.read();
+          rb = multiSensorData.bytes[n] ;
+          if (recvInProgress == true) 
+          {
+              if (rb != endMarker) 
+              {
+                  receivedBytes[ndx] = rb;
+                  ndx++;
+                  if (ndx >= numBytes) 
+                  {
+                      ndx = numBytes - 1;
+                  }
+              }
+              else {
+                  receivedBytes[ndx] = '\0'; // terminate the string
+                  recvInProgress = false;
+                  numReceived = ndx;  // save the number for use when printing
+                  ndx = 0;
+                  newData = true;
+              }
+          }
 
-        if (recvInProgress == true) {
-            if (rb != endMarker) {
-                receivedBytes[ndx] = rb;
-                ndx++;
-                if (ndx >= numBytes) {
-                    ndx = numBytes - 1;
-                }
-            }
-            else {
-                receivedBytes[ndx] = '\0'; // terminate the string
-                recvInProgress = false;
-                numReceived = ndx;  // save the number for use when printing
-                ndx = 0;
-                newData = true;
-            }
-        }
-
-        else if (rb == startMarker) {
-            recvInProgress = true;
-        }
+          else if (rb == startMarker) {
+              recvInProgress = true;
+          }
+      }
     }
 }
 
@@ -132,7 +140,7 @@ void recvWithStartEndMarkers() {
     while (newData == false) 
     {       
         
-      for (byte n = 0; n < sizeof (multiSensorData.bytes) -1 ; n++) 
+      for (byte n = 0; n < sizeof (multiSensorData.bytes) -1 ; n++) // The minus 1 strips the line ending byte. Guess that's \00
       {
         rc = multiSensorData.statusItem.msg[n];
 
@@ -242,14 +250,18 @@ bool explorePeripheral( BLEDevice peripheral )
         multiSensorDataCharacteristic.readValue( multiSensorData.bytes, sizeof multiSensorData.bytes );
         // do that byte array trick.
         // receiveData();
-        recvWithStartEndMarkers();
+        //recvWithStartEndMarkers();
+        recvBytesWithStartEndMarkers();
         
 
         if(newData){
+          // multiSensorData.bytes  = receivedBytes;
+          memcpy(multiSensorData.bytes, receivedBytes, sizeof(receivedBytes));
           Serial.print("<BLE.Status.Msg::: ");
           // Serial.print( multiSensorData.statusItem.msg ); 
                    
-          Serial.print(receivedChars); 
+          // Serial.print(receivedChars); 
+          Serial.print(multiSensorData.statusItem.msg); 
           //Serial.print( multiSensorData.z);
         /*
           Serial.print(" ");          
